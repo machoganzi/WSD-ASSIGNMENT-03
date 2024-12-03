@@ -5,21 +5,55 @@ const companySchema = new mongoose.Schema({
     type: String,
     required: true,
     unique: true,
+    index: true
   },
-  industry: String,
-  size: String,
-  location: String,
-  description: String,
-  websiteUrl: String,
-  logoUrl: String,
-  createdAt: {
-    type: Date,
-    default: Date.now,
+  description: {
+    type: String
   },
-  updatedAt: {
-    type: Date,
-    default: Date.now,
+  industry: {
+    type: String,
+    index: true
   },
+  size: {
+    type: String,
+    enum: ['startup', 'small', 'medium', 'large', 'enterprise']
+  },
+  foundedYear: Number,
+  employeeCount: Number,
+  location: {
+    address: String,
+    city: String,
+    country: String
+  },
+  website: String,
+  logo: String,
+  contacts: {
+    email: String,
+    phone: String
+  },
+  socialMedia: {
+    linkedin: String,
+    twitter: String,
+    facebook: String
+  },
+  jobPostings: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'Job'
+  }],
+  totalJobCount: {
+    type: Number,
+    default: 0
+  },
+  originalUrl: {
+    type: String,
+    unique: true
+  }
+}, {
+  timestamps: true
 });
 
-module.exports = mongoose.model('Company', companySchema);
+// 회사명 검색을 위한 텍스트 인덱스
+companySchema.index({ name: 'text', description: 'text' });
+
+const Company = mongoose.model('Company', companySchema);
+module.exports = Company;

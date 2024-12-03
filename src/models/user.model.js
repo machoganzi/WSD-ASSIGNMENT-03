@@ -1,5 +1,4 @@
 const mongoose = require('mongoose');
-const bcrypt = require('bcrypt');
 
 const userSchema = new mongoose.Schema({
   email: {
@@ -11,13 +10,31 @@ const userSchema = new mongoose.Schema({
   },
   password: {
     type: String,
-    required: true,
-    minlength: 6
+    required: true
   },
   name: {
     type: String,
     required: true,
     trim: true
+  },
+  phone: {
+    type: String,
+    trim: true
+  },
+  resume: {
+    education: [{
+      school: String,
+      major: String,
+      degree: String,
+      graduationYear: Number
+    }],
+    experience: [{
+      company: String,
+      position: String,
+      duration: String,
+      description: String
+    }],
+    skills: [String]
   },
   applications: [{
     type: mongoose.Schema.Types.ObjectId,
@@ -30,19 +47,20 @@ const userSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
+}, {
+  timestamps: true
 });
 
-// 비밀번호 암호화
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  this.password = await bcrypt.hash(this.password, 10);
-  next();
-});
+// 이메일 검증을 위한 정규식
+userSchema.path('email').validate(function(email) {
+  const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+  return emailRegex.test(email);
+}, 'Invalid email format');
 
-// 비밀번호 검증 메소드
-userSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
-};
-
-module.exports = mongoose.model('User', userSchema);
+const User = mongoose.model('User', userSchema);
+module.exports = User;
