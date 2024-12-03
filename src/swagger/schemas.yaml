@@ -1,0 +1,108 @@
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [error]
+        message:
+          type: string
+        code:
+          type: string
+        
+    Success:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [success]
+        data:
+          type: object
+          
+    Pagination:
+      type: object
+      properties:
+        currentPage:
+          type: integer
+        totalPages:
+          type: integer
+        totalItems:
+          type: integer
+        itemsPerPage:
+          type: integer
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        phone:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    Job:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        company:
+          $ref: '#/components/schemas/Company'
+        description:
+          type: string
+        requirements:
+          type: array
+          items:
+            type: string
+        benefits:
+          type: array
+          items:
+            type: string
+        skills:
+          type: array
+          items:
+            $ref: '#/components/schemas/Skill'
+        location:
+          type: string
+        jobType:
+          type: string
+          enum: [full-time, part-time, contract, internship]
+        salary:
+          type: string
+        deadline:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [active, closed, draft]
+        viewCount:
+          type: integer
+        applicationCount:
+          type: integer
+
+    Application:
+      type: object
+      properties:
+        id:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+        job:
+          $ref: '#/components/schemas/Job'
+        status:
+          type: string
+          enum: [pending, reviewing, accepted, rejected, withdrawn]
+        coverLetter:
+          type: string
+        appliedAt:
+          type: string
+          format: date-time
