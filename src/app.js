@@ -2,6 +2,9 @@ const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./config/swagger');
+
 require('dotenv').config();
 
 const connectDB = require('./config/database');
@@ -10,6 +13,11 @@ const app = express();
 
 // Connect to Database
 connectDB();
+
+// Swagger UI
+if (process.env.NODE_ENV !== 'production') {
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+}
 
 // Middleware
 app.use(helmet());

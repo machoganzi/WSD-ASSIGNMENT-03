@@ -1,3 +1,58 @@
+/**
+ * @swagger
+ * /auth/register:
+ *   post:
+ *     tags: [Auth]
+ *     summary: 회원가입
+ *     description: 새로운 사용자 계정을 생성합니다.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *               - password
+ *               - name
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minimum: 6
+ *               name:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: 회원가입 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [success]
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     token:
+ *                       type: string
+ *                     user:
+ *                       $ref: '#/components/schemas/User'
+ *       400:
+ *         description: 잘못된 요청
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/Error'
+ */
+router.post('/register', authController.register);
+
 const jwt = require('jsonwebtoken');
 const bcrypt = require('bcrypt');
 const { User } = require('../models');
