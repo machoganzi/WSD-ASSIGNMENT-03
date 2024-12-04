@@ -1,3 +1,273 @@
+/**
+ * @swagger
+ * tags:
+ *   name: Jobs
+ *   description: 채용공고 관리 API
+ */
+
+/**
+ * @swagger
+ * /jobs:
+ *   get:
+ *     tags: [Jobs]
+ *     summary: 채용공고 목록 조회
+ *     description: 필터링과 페이징을 지원하는 채용공고 목록을 조회합니다.
+ *     parameters:
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: 페이지 번호
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *         description: 페이지당 항목 수
+ *       - in: query
+ *         name: location
+ *         schema:
+ *           type: string
+ *         description: 지역 필터
+ *       - in: query
+ *         name: jobType
+ *         schema:
+ *           type: string
+ *           enum: [full-time, part-time, contract, internship]
+ *         description: 고용 형태
+ *       - in: query
+ *         name: skills
+ *         schema:
+ *           type: array
+ *           items:
+ *             type: string
+ *         description: 기술 스택 필터
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [createdAt, -createdAt, viewCount, -viewCount]
+ *         description: 정렬 기준
+ *     responses:
+ *       200:
+ *         description: 채용공고 목록 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [success]
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     jobs:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Job'
+ *                     pagination:
+ *                       $ref: '#/components/schemas/Pagination'
+ *
+ *   post:
+ *     tags: [Jobs]
+ *     summary: 채용공고 등록
+ *     description: 새로운 채용공고를 등록합니다. (관리자 전용)
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - title
+ *               - companyId
+ *               - description
+ *               - location
+ *               - jobType
+ *               - deadline
+ *             properties:
+ *               title:
+ *                 type: string
+ *               companyId:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               requirements:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               benefits:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               skillIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               location:
+ *                 type: string
+ *               jobType:
+ *                 type: string
+ *                 enum: [full-time, part-time, contract, internship]
+ *               salary:
+ *                 type: string
+ *               deadline:
+ *                 type: string
+ *                 format: date-time
+ *     responses:
+ *       201:
+ *         description: 채용공고 등록 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [success]
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     job:
+ *                       $ref: '#/components/schemas/Job'
+ */
+
+/**
+ * @swagger
+ * /jobs/{id}:
+ *   get:
+ *     tags: [Jobs]
+ *     summary: 채용공고 상세 조회
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 채용공고 ID
+ *     responses:
+ *       200:
+ *         description: 채용공고 상세 정보 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [success]
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     job:
+ *                       $ref: '#/components/schemas/Job'
+ *
+ *   patch:
+ *     tags: [Jobs]
+ *     summary: 채용공고 수정
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 채용공고 ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               requirements:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               benefits:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               skillIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               location:
+ *                 type: string
+ *               jobType:
+ *                 type: string
+ *               salary:
+ *                 type: string
+ *               deadline:
+ *                 type: string
+ *                 format: date-time
+ *               status:
+ *                 type: string
+ *                 enum: [active, closed, draft]
+ *     responses:
+ *       200:
+ *         description: 채용공고 수정 성공
+ *
+ *   delete:
+ *     tags: [Jobs]
+ *     summary: 채용공고 삭제
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 채용공고 ID
+ *     responses:
+ *       204:
+ *         description: 채용공고 삭제 성공
+ */
+
+/**
+ * @swagger
+ * /jobs/{id}/related:
+ *   get:
+ *     tags: [Jobs]
+ *     summary: 연관 채용공고 조회
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: 채용공고 ID
+ *     responses:
+ *       200:
+ *         description: 연관 채용공고 조회 성공
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   enum: [success]
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     relatedJobs:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Job'
+ */
+
+
 const { Job, Company, Skill } = require('../models');
 const { NotFoundError, ValidationError } = require('../utils/errors');
 const logger = require('../utils/logger');
