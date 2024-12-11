@@ -17,7 +17,7 @@ class ApplicationService:
             })
             
             if existing_application:
-                return False, "Already applied to this job", None
+                return False, "이미 지원한 채용공고입니다", None
 
             # 채용공고 존재 확인
             job = self.db.job_postings.find_one({
@@ -26,7 +26,7 @@ class ApplicationService:
             })
             
             if not job:
-                return False, "Job posting not found or inactive", None
+                return False, "채용공고를 찾을 수 없거나 비활성화되었습니다", None
 
             application_data = {
                 'user_id': user_id,
@@ -40,7 +40,7 @@ class ApplicationService:
             result = self.db.applications.insert_one(application_data)
             application_data['_id'] = str(result.inserted_id)
             
-            return True, "Successfully applied to job", application_data
+            return True, "채용공고 지원이 완료되었습니다", application_data
 
         except Exception as e:
             return False, str(e), None
@@ -54,8 +54,8 @@ class ApplicationService:
             })
             
             if result.deleted_count:
-                return True, "Application cancelled successfully"
-            return False, "Application not found"
+                return True, "지원이 취소되었습니다"
+            return False, "지원 내역을 찾을 수 없습니다"
 
         except Exception as e:
             return False, str(e)
@@ -88,9 +88,10 @@ class ApplicationService:
                 'status': 'success',
                 'data': applications,
                 'pagination': {
-                    'current_page': page,
-                    'total_pages': total_pages,
-                    'total_items': total_items
+                    'currentPage': page,
+                    'totalPages': total_pages,
+                    'totalItems': total_items,
+                    'perPage': self.ITEMS_PER_PAGE  # 추가
                 }
             }
 

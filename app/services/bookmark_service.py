@@ -17,7 +17,7 @@ class BookmarkService:
             })
             
             if not job:
-                return False, "Job posting not found or inactive", None
+                return False, "채용공고를 찾을 수 없거나 비활성화되었습니다", None
 
             # 기존 북마크 확인
             existing_bookmark = self.db.bookmarks.find_one({
@@ -28,7 +28,7 @@ class BookmarkService:
             if existing_bookmark:
                 # 북마크 제거
                 self.db.bookmarks.delete_one({'_id': existing_bookmark['_id']})
-                return True, "Bookmark removed successfully", "removed"
+                return True, "북마크가 성공적으로 제거되었습니다", "removed"
             else:
                 # 북마크 추가
                 bookmark_data = {
@@ -37,7 +37,7 @@ class BookmarkService:
                     'created_at': datetime.utcnow()
                 }
                 self.db.bookmarks.insert_one(bookmark_data)
-                return True, "Bookmark added successfully", "added"
+                return True, "북마크가 성공적으로 추가되었습니다", "added"
 
         except Exception as e:
             return False, str(e), None
@@ -70,9 +70,10 @@ class BookmarkService:
                 'status': 'success',
                 'data': bookmarks,
                 'pagination': {
-                    'current_page': page,
-                    'total_pages': total_pages,
-                    'total_items': total_items
+                    'currentPage': page,
+                    'totalPages': total_pages,
+                    'totalItems': total_items,
+                    'perPage': self.ITEMS_PER_PAGE  # 추가
                 }
             }
 

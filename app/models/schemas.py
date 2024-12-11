@@ -27,7 +27,7 @@ class JobPosting(BaseModel):
     """채용 공고 모델
     
     사람인 크롤러를 통해 수집되는 실제 데이터 필드들을 반영합니다.
-    company_id, title, original_url을 기준으로 유니크하게 관리됩니다.
+    company_id, title을 기준으로 유니크하게 관리됩니다.
     """
     # 기본 식별 정보
     id: str = Field(default_factory=str)
@@ -44,20 +44,18 @@ class JobPosting(BaseModel):
     requirements: List[str] = Field(default_factory=list)  # 자격요건
     preferred: List[str] = Field(default_factory=list)  # 우대사항
     benefits: List[str] = Field(default_factory=list)  # 복리후생
+    process: List[str] = Field(default_factory=list)  # 채용 절차
     
     # 근무 조건 
     location: str = ""  # 근무지 주소
+    detail_location: str = ""  # 상세 근무지
     job_type: str = ""  # 고용형태
     experience_level: str = ""  # 경력 요건
     education: str = ""  # 학력 요건
-    work_shift: str = ""  # 근무시간
     conditions: WorkConditions = Field(default_factory=WorkConditions)  # 상세 근무조건
     
     # 급여 정보
     salary_text: str = ""  # 텍스트형 급여 정보
-    salary: Dict[str, int] = Field(
-        default_factory=lambda: {"min": 0, "max": 0}
-    )
     
     # 직무 분야
     sector: str = ""  # 직무분야
@@ -66,7 +64,6 @@ class JobPosting(BaseModel):
     # 채용 정보
     deadline: str = ""  # 마감일 텍스트
     deadline_timestamp: Optional[datetime] = None  # 파싱된 마감일
-    total_count: int = 0  # 채용 인원
     
     # 메타 정보
     status: str = "active"
@@ -103,10 +100,10 @@ class JobPosting(BaseModel):
                     "work_shift": "주 5일 (월-금) 09:00-18:00"
                 },
                 "location": "서울 강남구",
+                "detail_location": "서울특별시 강남구 테헤란로 123",
                 "job_type": "정규직",
                 "salary_text": "3,500~4,000만원",
                 "sector": "웹개발",
-                "total_count": 2,
                 "original_url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=12345"
             }
         }

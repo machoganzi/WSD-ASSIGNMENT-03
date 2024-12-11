@@ -56,13 +56,45 @@ class AuthService:
             if not user.get('is_active', True):
                 return False, "Account is deactivated", None
 
-            # 토큰 생성
+            # 액세스 토큰과 리프레시 토큰 생성
             tokens = self.auth_utils.create_tokens(str(user['_id']))
+            
+            # 토큰 정보 저장
+            self.db.users.update_one(
+                {'_id': user['_id']},
+                {
+                    '$set': {
+                        'last_login': datetime.utcnow(),
+                        'refresh_token': tokens['refresh_token']
+                    }
+                }
+            )
             
             return True, "Login successful", {
                 'user_id': str(user['_id']),
                 'email': user['email'],
-                'tokens': tokens
+                'access_token': tokens['access_token'],
+                'refresh_token': tokens['refresh_token'],
+                'token_type': 'Bearer'
+            }
+
+        except Exception as e:
+            return False, str(e), None
+
+    def refresh_token(self, user_id: str) -> Tuple[bool, str, Optional[Dict]]:
+        """토큰 갱신"""
+        try:
+            # 사용자 조회
+            user = self.db.users.find_one({'_id': ObjectId(user_id)})
+            if not user:
+                return False, "User not found", None
+
+            # 새로운 액세스 토큰 생성
+            new_tokens = self.auth_utils.create_tokens(str(user['_id']))
+            
+            return True, "Token refreshed successfully", {
+                'access_token': new_tokens['access_token'],
+                'token_type': 'Bearer'
             }
 
         except Exception as e:
@@ -97,6 +129,7 @@ class AuthService:
             if result.modified_count:
                 updated_user = self.db.users.find_one({'_id': ObjectId(user_id)})
                 updated_user['_id'] = str(updated_user['_id'])
+                del updated_user['password']  # 비밀번호 정보 제거
                 return True, "Profile updated successfully", updated_user
 
             return False, "No changes made", None
