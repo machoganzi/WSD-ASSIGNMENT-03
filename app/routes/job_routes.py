@@ -5,7 +5,7 @@ from ..services.job_service import JobService
 
 job_bp = Blueprint('jobs', __name__, url_prefix='/jobs')
 job_service = None
-PER_PAGE = 20  # 페이지당 항목 수 고정
+PER_PAGE = 20
 
 @job_bp.record
 def record_params(setup_state):
@@ -15,75 +15,112 @@ def record_params(setup_state):
 
 @job_bp.route('', methods=['GET'])
 @swag_from({
-    'tags': ['jobs'],
-    'description': '채용공고 목록 조회 API',
+    'tags': ['Jobs'],
+    'summary': '채용공고 목록 조회',
     'parameters': [
         {
+            'in': 'query',
             'name': 'page',
-            'in': 'query',
-            'type': 'integer',
-            'default': 1,
-            'description': '페이지 번호'
+            'schema': {
+                'type': 'integer',
+                'default': 1
+            }
         },
         {
+            'in': 'query',
             'name': 'location',
-            'in': 'query',
-            'type': 'string',
-            'description': '지역 필터'
+            'schema': {
+                'type': 'string'
+            }
         },
         {
+            'in': 'query',
             'name': 'experience_level',
-            'in': 'query',
-            'type': 'string',
-            'description': '경력 필터'
+            'schema': {
+                'type': 'string'
+            }
         },
         {
+            'in': 'query',
+            'name': 'min_salary',
+            'schema': {
+                'type': 'integer'
+            }
+        },
+        {
+            'in': 'query',
             'name': 'skills',
-            'in': 'query',
-            'type': 'string',
-            'description': '기술스택 필터 (콤마로 구분)'
+            'schema': {
+                'type': 'string'
+            },
+            'description': 'Comma separated skills'
         },
         {
-            'name': 'sort_by',
             'in': 'query',
-            'type': 'string',
-            'description': '정렬 기준'
+            'name': 'sort_by',
+            'schema': {
+                'type': 'string',
+                'enum': ['salary', 'deadline']
+            }
         }
     ],
     'responses': {
         '200': {
-            'description': '채용공고 목록 조회 성공'
+            'description': '채용공고 목록',
+            'content': {
+                'application/json': {
+                    'schema': {
+                        'type': 'object',
+                        'properties': {
+                            'status': {
+                                'type': 'string',
+                                'example': 'success'
+                            },
+                            'data': {
+                                'type': 'array',
+                                'items': {
+                                    '$ref': '#/components/schemas/JobPosting'
+                                }
+                            },
+                            'pagination': {
+                                '$ref': '#/components/schemas/Pagination'
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 })
 def get_job_postings():
     """채용공고 목록 조회 API"""
     try:
-        page = int(request.args.get('page', 1))
-        filters = {}
-        
-        # 필터 파라미터 처리
-        if request.args.get('location'):
-            filters['location'] = request.args.get('location')
-        if request.args.get('experience_level'):
-            filters['experience_level'] = request.args.get('experience_level')
-        if request.args.get('skills'):
-            filters['skills'] = request.args.get('skills').split(',')
-        
+        # 쿼리 파라미터 가져오기
+        page = request.args.get('page', 1, type=int)
+        location = request.args.get('location')
+        experience_level = request.args.get('experience_level')
+        min_salary = request.args.get('min_salary', type=int)
+        skills = request.args.get('skills')
         sort_by = request.args.get('sort_by')
+
+        # 필터 구성
+        filters = {}
+        if location:
+            filters['location'] = location
+        if experience_level:
+            filters['experience_level'] = experience_level
+        if min_salary:
+            filters['min_salary'] = min_salary
+        if skills:
+            filters['skills'] = skills.split(',')
+
+        # 서비스 호출
+        result = job_service.get_job_postings(page=page, filters=filters, sort_by=sort_by)
         
-        result = job_service.get_job_postings(page, PER_PAGE, filters, sort_by)
+        if result['status'] == 'success':
+            return jsonify(result), 200
         
-        return jsonify({
-            'status': 'success',
-            'data': result['data'],
-            'pagination': {
-                'currentPage': page,
-                'totalPages': result['total_pages'],
-                'totalItems': result['total_items'],
-                'perPage': PER_PAGE
-            }
-        }), 200
+        return jsonify(result), 400
 
     except Exception as e:
         return jsonify({
@@ -93,54 +130,71 @@ def get_job_postings():
 
 @job_bp.route('/search', methods=['GET'])
 @swag_from({
-    'tags': ['jobs'],
-    'description': '채용공고 검색 API',
+    'tags': ['Jobs'],
+    'summary': '채용공고 검색',
     'parameters': [
         {
-            'name': 'keyword',
             'in': 'query',
-            'type': 'string',
+            'name': 'keyword',
             'required': True,
-            'description': '검색 키워드'
+            'schema': {
+                'type': 'string'
+            }
         },
         {
-            'name': 'page',
             'in': 'query',
-            'type': 'integer',
-            'default': 1,
-            'description': '페이지 번호'
+            'name': 'page',
+            'schema': {
+                'type': 'integer',
+                'default': 1
+            }
         }
     ],
     'responses': {
         '200': {
-            'description': '채용공고 검색 성공'
+            'description': '검색 결과',
+            'content': {
+                'application/json': {
+                    'schema': {
+                        'type': 'object',
+                        'properties': {
+                            'status': {
+                                'type': 'string',
+                                'example': 'success'
+                            },
+                            'data': {
+                                'type': 'array',
+                                'items': {
+                                    '$ref': '#/components/schemas/JobPosting'
+                                }
+                            },
+                            'pagination': {
+                                '$ref': '#/components/schemas/Pagination'
+                            }
+                        }
+                    }
+                }
+            }
         }
     }
 })
 def search_jobs():
     """채용공고 검색 API"""
     try:
-        keyword = request.args.get('keyword', '')
-        page = int(request.args.get('page', 1))
-        
+        keyword = request.args.get('keyword')
         if not keyword:
             return jsonify({
                 'status': 'error',
-                'message': 'Search keyword is required'
+                'message': '검색어를 입력해주세요.'
             }), 400
 
-        result = job_service.search_jobs(keyword, page, PER_PAGE)
+        page = request.args.get('page', 1, type=int)
+        result = job_service.search_jobs(keyword=keyword, page=page)
         
-        return jsonify({
-            'status': 'success',
-            'data': result['data'],
-            'pagination': {
-                'currentPage': page,
-                'totalPages': result['total_pages'],
-                'totalItems': result['total_items'],
-                'perPage': PER_PAGE
-            }
-        }), 200
+        if result['status'] == 'success':
+            return jsonify(result), 200
+            
+        return jsonify(result), 400
 
     except Exception as e:
         return jsonify({
@@ -150,20 +204,28 @@ def search_jobs():
 
 @job_bp.route('/<job_id>', methods=['GET'])
 @swag_from({
-    'tags': ['jobs'],
-    'description': '채용공고 상세 조회 API',
+    'tags': ['Jobs'],
+    'summary': '채용공고 상세 조회',
     'parameters': [
         {
-            'name': 'job_id',
             'in': 'path',
-            'type': 'string',
+            'name': 'job_id',
             'required': True,
-            'description': '채용공고 ID'
+            'schema': {
+                'type': 'string'
+            }
         }
     ],
     'responses': {
         '200': {
-            'description': '채용공고 상세 조회 성공'
+            'description': '채용공고 상세 정보',
+            'content': {
+                'application/json': {
+                    'schema': {
+                        '$ref': '#/components/schemas/JobPosting'
+                    }
+                }
+            }
         }
     }
 })

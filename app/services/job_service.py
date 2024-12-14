@@ -74,29 +74,23 @@ class JobService:
             # 기본 필터 (활성 상태)
             query = {'status': 'active'}
             
-            # 고급 필터링 조건 적용
+            # 필터링 조건 적용
             if filters:
                 if 'location' in filters:
                     query['location'] = {'$regex': filters['location'], '$options': 'i'}
                 if 'experience_level' in filters:
                     query['experience_level'] = filters['experience_level']
-                if 'education' in filters:
-                    query['education'] = filters['education']
-                if 'job_type' in filters:
-                    query['job_type'] = filters['job_type']
-                if 'salary' in filters:
+                if 'min_salary' in filters:
                     query['$or'] = [
-                        {'salary.min': {'$gte': filters['salary']}},
-                        {'salary.max': {'$gte': filters['salary']}}
+                        {'salary.min': {'$gte': filters['min_salary']}},
+                        {'salary.max': {'$gte': filters['min_salary']}}
                     ]
                 if 'skills' in filters:
-                    query['skills'] = {'$all': filters['skills']}
-                if 'sector' in filters:
-                    query['sector'] = {'$regex': filters['sector'], '$options': 'i'}
-                if 'deadline' in filters:
-                    query['deadline_timestamp'] = {'$gte': datetime.utcnow()}
-                if 'tasks' in filters:
-                    query['tasks'] = {'$all': filters['tasks']}
+                    if isinstance(filters['skills'], str):
+                        skills = filters['skills'].split(',')
+                    else:
+                        skills = filters['skills']
+                    query['skills'] = {'$all': skills}
 
             # 정렬 조건
             sort_conditions = [('created_at', -1)]  # 기본: 최신순
@@ -105,47 +99,31 @@ class JobService:
                     sort_conditions = [('salary.max', -1)]
                 elif sort_by == 'deadline':
                     sort_conditions = [('deadline_timestamp', 1)]
-                elif sort_by == 'experience':
-                    sort_conditions = [('experience_level', 1)]
 
-            # 페이지네이션 처리
-            total_items = self.db.job_postings.count_documents(query)
-            total_pages = math.ceil(total_items / self.ITEMS_PER_PAGE)
+            # 페이지네이션
             skip = (page - 1) * self.ITEMS_PER_PAGE
             
-            # 채용공고 조회 및 회사 정보 결합
-            pipeline = [
-                {'$match': query},
-                {'$sort': {field: order for field, order in sort_conditions}},
-                {'$skip': skip},
-                {'$limit': self.ITEMS_PER_PAGE},
-                {
-                    '$lookup': {
-                        'from': 'companies',
-                        'localField': 'company_id',
-                        'foreignField': '_id',
-                        'as': 'company'
-                    }
-                },
-                {'$unwind': '$company'}
-            ]
-            
-            job_postings = list(self.db.job_postings.aggregate(pipeline))
+            # 채용공고 조회
+            job_postings = list(self.db.job_postings.find(query)
+                            .sort(sort_conditions)
+                            .skip(skip)
+                            .limit(self.ITEMS_PER_PAGE))
 
-            # ObjectId 변환 및 데이터 정제
+            # ObjectId 문자열로 변환
             for job in job_postings:
                 job['_id'] = str(job['_id'])
-                job['company_id'] = str(job['company_id'])
-                job['company']['_id'] = str(job['company']['_id'])
+
+            total_items = self.db.job_postings.count_documents(query)
+            total_pages = math.ceil(total_items / self.ITEMS_PER_PAGE)
 
             return {
                 'status': 'success',
                 'data': job_postings,
                 'pagination': {
-                    'current_page': page,
-                    'total_pages': total_pages,
-                    'total_items': total_items,
-                    'items_per_page': self.ITEMS_PER_PAGE
+                    'currentPage': page,
+                    'totalPages': total_pages,
+                    'totalItems': total_items,
+                    'perPage': self.ITEMS_PER_PAGE
                 }
             }
 

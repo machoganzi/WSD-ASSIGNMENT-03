@@ -1,5 +1,5 @@
 from pymongo import MongoClient
-from crawlers.saramin_crawler import SaraminCrawler
+from app.crawlers.saramin_crawler import SaraminCrawler
 import logging
 
 logging.basicConfig(

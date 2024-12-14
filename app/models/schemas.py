@@ -1,6 +1,6 @@
 from datetime import datetime
 from typing import Dict, List, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, EmailStr
 
 class Company(BaseModel):
     """회사 정보 모델
@@ -105,5 +105,86 @@ class JobPosting(BaseModel):
                 "salary_text": "3,500~4,000만원",
                 "sector": "웹개발",
                 "original_url": "https://www.saramin.co.kr/zf_user/jobs/relay/view?rec_idx=12345"
+            }
+        }
+
+class User(BaseModel):
+    """사용자 정보 모델
+    
+    사용자의 기본 정보와 인증 관련 정보를 포함합니다.
+    이메일을 기준으로 유니크하게 관리됩니다.
+    """
+    id: str = Field(default_factory=str)
+    email: EmailStr
+    password: str  # Base64로 인코딩된 비밀번호
+    name: str
+    is_active: bool = True
+    last_login: Optional[datetime] = None
+    refresh_token: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    deactivated_at: Optional[datetime] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "email": "user@example.com",
+                "name": "홍길동",
+                "is_active": True,
+                "created_at": "2024-01-01T00:00:00Z"
+            }
+        }
+
+class Application(BaseModel):
+    """채용공고 지원 정보 모델
+    
+    사용자의 채용공고 지원 정보를 관리합니다.
+    user_id와 job_posting_id 조합으로 유니크하게 관리됩니다.
+    """
+    id: str = Field(default_factory=str)
+    user_id: str
+    job_posting_id: str
+    status: str  # applied, in_review, interview_scheduled, accepted, rejected, canceled
+    resume_url: Optional[str] = None
+    resume_versions: List[Dict] = Field(default_factory=list)
+    current_resume_url: Optional[str] = None
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    canceled_at: Optional[datetime] = None
+    
+    # 상태 변경 타임스탬프
+    applied_at: Optional[datetime] = None
+    in_review_at: Optional[datetime] = None
+    interview_scheduled_at: Optional[datetime] = None
+    accepted_at: Optional[datetime] = None
+    rejected_at: Optional[datetime] = None
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "status": "applied",
+                "resume_url": "https://example.com/resume.pdf",
+                "created_at": "2024-01-01T00:00:00Z"
+            }
+        }
+
+class Bookmark(BaseModel):
+    """채용공고 북마크 모델
+    
+    사용자가 관심있는 채용공고를 북마크로 저장합니다.
+    user_id와 job_posting_id 조합으로 유니크하게 관리됩니다.
+    """
+    id: str = Field(default_factory=str)
+    user_id: str
+    job_posting_id: str
+    job_category: Optional[str] = None  # 필터링을 위한 채용공고 카테고리
+    company_id: Optional[str] = None    # 필터링을 위한 회사 ID
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        schema_extra = {
+            "example": {
+                "job_category": "Backend Development",
+                "created_at": "2024-01-01T00:00:00Z"
             }
         }
